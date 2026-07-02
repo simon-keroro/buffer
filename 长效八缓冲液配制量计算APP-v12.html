@@ -1,0 +1,1880 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>长效八缓冲液用量计算 V12</title>
+  <style>
+    :root {
+      --bg: #f3f5f4;
+      --panel: #ffffff;
+      --ink: #1a2521;
+      --muted: #5a6b65;
+      --line: #e2e8e5;
+      --soft-green: #eef7f4;
+      --soft-blue: #eef6fc;
+      --soft-amber: #fdf6ec;
+      --soft-gray: #f4f6f5;
+      --green: #0d5c49;
+      --green-hover: #0a4638;
+      --blue: #2b537a;
+      --amber: #8f500a;
+      --gray: #4f5855;
+      --shadow: 0 10px 30px rgba(13, 29, 23, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
+      --shadow-hover: 0 16px 40px rgba(13, 29, 23, 0.09);
+      --radius: 12px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 32px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.01);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-logo {
+      width: 8px;
+      height: 24px;
+      background: var(--green);
+      border-radius: 4px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: -0.5px;
+    }
+
+    .top-actions {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    button, select, input {
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      color: var(--ink);
+      font-family: inherit;
+      font-size: 13px;
+      transition: all 0.2s ease;
+    }
+
+    button {
+      padding: 0 16px;
+      cursor: pointer;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    button:hover {
+      border-color: var(--muted);
+      background: #fafbfa;
+    }
+
+    button.primary {
+      color: #fff;
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    button.primary:hover {
+      background: var(--green-hover);
+      border-color: var(--green-hover);
+    }
+
+    select {
+      padding: 0 32px 0 12px;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%235a6b65' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 14px;
+    }
+
+    select:focus, input:focus {
+      outline: none;
+      border-color: var(--green);
+      box-shadow: 0 0 0 3px rgba(13, 92, 73, 0.1);
+    }
+
+    input[type="number"] {
+      padding: 0 12px;
+      width: 100%;
+      text-align: center;
+      -moz-appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+
+    main {
+      padding: 24px 32px 40px;
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      transition: box-shadow 0.3s ease;
+    }
+
+    .panel:hover {
+      box-shadow: var(--shadow-hover);
+    }
+
+    .panel-title {
+      padding: 16px 20px;
+      margin: 0;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
+      border-bottom: 1px solid var(--line);
+      background: #fafbfa;
+    }
+
+    .control-sidebar {
+      display: grid;
+      gap: 20px;
+    }
+
+    .inputs {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .input-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .input-label span.spec {
+      font-weight: normal;
+      color: #90a09a;
+    }
+
+    .spin-box {
+      display: flex;
+      align-items: center;
+      position: relative;
+    }
+
+    .spin-btn {
+      position: absolute;
+      width: 34px;
+      height: 34px;
+      border: none;
+      background: transparent;
+      color: var(--muted);
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      user-select: none;
+    }
+
+    .spin-btn:hover {
+      color: var(--green);
+      background: var(--soft-gray);
+      border-radius: 6px;
+    }
+
+    .spin-btn.down { left: 2px; }
+    .spin-btn.up { right: 2px; }
+
+    .spin-box input {
+      padding-left: 36px;
+      padding-right: 36px;
+      font-weight: 600;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      padding: 20px;
+      border-top: 1px solid var(--line);
+      background: #fcfdfe;
+    }
+
+    .metric {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .metric::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 4px;
+      background: var(--green);
+    }
+
+    .metric.ac::before { background-color: var(--green); }
+    .metric.hic::before { background-color: var(--blue); }
+    .metric.aex::before { background-color: var(--amber); }
+    .metric.total { background: var(--soft-green); border-color: rgba(13,92,73,0.15); }
+    .metric.total::before { background-color: var(--green); }
+
+    .metric span {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .metric strong {
+      margin-top: 4px;
+      font-size: 20px;
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .metric.total strong {
+      color: var(--green);
+    }
+
+    .table-head {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--line);
+      background: #fafbfa;
+    }
+
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+    }
+
+    .select-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--ink);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .select-control select {
+      height: 34px;
+    }
+
+    .check-control {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--muted);
+      transition: color 0.2s;
+    }
+
+    .check-control:hover {
+      color: var(--ink);
+    }
+
+    .check-control input {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: var(--green);
+      margin: 0;
+    }
+
+    .view-note {
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 12px;
+      background: var(--soft-gray);
+      padding: 6px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      max-width: 100%;
+    }
+
+    .sync-status {
+      color: var(--muted);
+      font-size: 12px;
+      background: var(--soft-gray);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      white-space: nowrap;
+    }
+
+    .sync-status.online {
+      color: var(--green);
+      background: var(--soft-green);
+      border-color: rgba(13, 92, 73, 0.18);
+    }
+
+    .sync-status.offline {
+      color: var(--amber);
+      background: var(--soft-amber);
+      border-color: rgba(143, 80, 10, 0.18);
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      background: var(--panel);
+      max-width: 100%;
+      transition: max-width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* 限制标准视图宽度，防止单行过度横向延展 */
+    .table-wrap.compact-view {
+      max-width: 860px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 780px;
+      border-collapse: separate;
+      border-spacing: 0;
+      table-layout: fixed; /* 固定列宽，防止闪烁抖动 */
+    }
+
+    th, td {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      background: #f4f6f5;
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    th.resizable {
+      position: sticky;
+      user-select: none;
+    }
+
+    .th-label {
+      display: block;
+      overflow-wrap: anywhere;
+      padding-right: 8px;
+    }
+
+    .col-resizer {
+      position: absolute;
+      top: 0;
+      right: -4px;
+      width: 8px;
+      height: 100%;
+      cursor: col-resize;
+      z-index: 20;
+      touch-action: none;
+    }
+
+    .col-resizer::after {
+      content: "";
+      position: absolute;
+      top: 18%;
+      right: 3px;
+      width: 1px;
+      height: 64%;
+      background: transparent;
+      transition: background 0.15s ease;
+    }
+
+    th.resizable:hover .col-resizer::after,
+    th.is-resizing .col-resizer::after {
+      background: var(--green);
+    }
+
+    body.is-column-resizing {
+      cursor: col-resize;
+      user-select: none;
+    }
+
+    /* 精确分配列的默认宽度，完美防止挤压 */
+    .col-info { width: 320px; }
+    .col-phase { width: 120px; }
+    .col-extra { width: 105px; } /* 新增列的合适尺寸 */
+    .col-total { width: 130px; }
+    .col-basis { width: auto; }
+
+    tbody tr {
+      transition: background 0.15s ease;
+    }
+
+    tbody tr:hover {
+      background: #f7faf8;
+    }
+
+    td.num, th.num {
+      text-align: right;
+    }
+
+    .buffer-info-cell {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      text-align: left;
+    }
+
+    .id {
+      color: var(--green);
+      font-weight: 700;
+      font-family: monospace;
+      font-size: 12px;
+      background: var(--soft-green);
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: inline-block;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .name-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .name {
+      font-weight: 600;
+      color: var(--ink);
+      cursor: help;
+      text-underline-offset: 3px;
+      border-bottom: 1px dotted var(--muted);
+      display: inline-block;
+      width: fit-content;
+    }
+
+    .formula {
+      font-size: 12px;
+      color: var(--muted);
+      max-width: 280px;
+      line-height: 1.4;
+      word-break: break-all;
+    }
+
+    .phase-badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--soft-gray);
+      color: var(--gray);
+    }
+
+    .phase-badge.ac { background: var(--soft-green); color: var(--green); }
+    .phase-badge.hic { background: var(--soft-blue); color: var(--blue); }
+    .phase-badge.aex { background: var(--soft-amber); color: var(--amber); }
+
+    .basis {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .basis-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      flex-wrap: wrap;
+    }
+
+    .basis-step {
+      color: var(--ink);
+    }
+
+    .basis-readonly {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      min-width: 0;
+    }
+
+    .basis-step-input {
+      width: min(100%, 280px);
+      min-width: 180px;
+      height: 30px;
+      padding: 0 8px;
+      text-align: left;
+      font-size: 12px;
+      background: #fff;
+    }
+
+    .basis-number {
+      width: 76px;
+      height: 30px;
+      padding: 0 8px;
+      text-align: right;
+      font-size: 12px;
+      font-weight: 600;
+      background: #fff;
+    }
+
+    .basis-unit {
+      color: var(--muted);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .basis-edit-toggle {
+      height: 26px;
+      padding: 0 10px;
+      border-radius: 6px;
+      color: var(--muted);
+      background: #fff;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .basis-edit-toggle.active {
+      color: #fff;
+      background: var(--green);
+      border-color: var(--green);
+    }
+
+    .pill {
+      display: inline-block;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 2px 8px;
+      color: var(--muted);
+      background: #fff;
+      font-size: 11px;
+      font-family: monospace;
+      font-weight: 500;
+    }
+
+    /* 附加数据输入框精细化样式 - 升级后不带任何繁琐文本 */
+    .extra-input {
+      width: 75px;
+      height: 28px;
+      font-size: 13px;
+      padding: 0 8px;
+      text-align: right;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      background: #fafbfa;
+      color: var(--ink);
+      font-weight: 600;
+      transition: all 0.15s ease;
+    }
+
+    .extra-input:focus {
+      outline: none;
+      border-color: var(--green);
+      background: #ffffff;
+      box-shadow: 0 0 0 2px rgba(13, 92, 73, 0.1);
+    }
+
+    /* 当数值大于0时，激活鲜明的背景色 */
+    .extra-input.active {
+      border-color: var(--green);
+      background: var(--soft-green);
+      color: var(--green);
+    }
+
+    .version-list {
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 12px;
+      border-top: 1px solid var(--line);
+      background: var(--soft-gray);
+    }
+
+    .version-list strong {
+      color: var(--muted);
+    }
+
+    .version-list a {
+      color: var(--green);
+      text-decoration: none;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 6px;
+      background: #fff;
+      border: 1px solid var(--line);
+      transition: all 0.2s;
+    }
+
+    .version-list a:hover {
+      background: var(--soft-green);
+      border-color: var(--green);
+    }
+
+    /* 打印样式适配 */
+    @media print {
+      body { background: #fff; color: #000; }
+      header, .top-actions, .control-sidebar, .table-head, .version-list { display: none !important; }
+      main { grid-template-columns: 1fr; padding: 0; }
+      .panel { box-shadow: none !important; border: none !important; }
+      table { min-width: 100% !important; table-layout: auto !important; }
+      th, td { padding: 8px !important; border-bottom: 1px solid #000 !important; }
+    }
+
+    @media (max-width: 1200px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+      .control-sidebar {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+      }
+      .metrics {
+        border-top: none;
+        background: transparent;
+      }
+    }
+
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px;
+      }
+      .top-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+      main {
+        padding: 16px;
+      }
+      .control-sidebar {
+        grid-template-columns: 1fr;
+      }
+      .table-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .view-note {
+        width: 100%;
+        margin-left: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-logo"></div>
+      <h1>长效八下游缓冲液用量计算 V12</h1>
+    </div>
+    <div class="top-actions">
+      <span id="syncStatus" class="sync-status offline">本机模式</span>
+      <button id="resetStateBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-9.36L1 10"/></svg>
+        恢复默认
+      </button>
+      <button id="csvBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        导出 Excel 表格
+      </button>
+      <button class="primary" onclick="window.print()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        打印
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="control-sidebar">
+      <div class="panel">
+        <h3 class="panel-title">层析柱规格与参数</h3>
+        <div class="inputs">
+          <div class="input-group">
+            <div class="input-label">
+              <span>AC 柱高 (cm)</span>
+              <span class="spec">内径 450mm</span>
+            </div>
+            <div class="spin-box">
+              <button class="spin-btn down" onclick="adjustValue('heightAC', -0.1)">-</button>
+              <input id="heightAC" type="number" min="10" max="15" step="0.1" value="10">
+              <button class="spin-btn up" onclick="adjustValue('heightAC', 0.1)">+</button>
+            </div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">
+              <span>HIC 柱高 (cm)</span>
+              <span class="spec">内径 600mm</span>
+            </div>
+            <div class="spin-box">
+              <button class="spin-btn down" onclick="adjustValue('heightHIC', -0.1)">-</button>
+              <input id="heightHIC" type="number" min="10" max="15" step="0.1" value="10">
+              <button class="spin-btn up" onclick="adjustValue('heightHIC', 0.1)">+</button>
+            </div>
+          </div>
+          <div class="input-group">
+            <div class="input-label">
+              <span>AEX 柱高 (cm)</span>
+              <span class="spec">内径 300mm</span>
+            </div>
+            <div class="spin-box">
+              <button class="spin-btn down" onclick="adjustValue('heightAEX', -0.1)">-</button>
+              <input id="heightAEX" type="number" min="10" max="15" step="0.1" value="10">
+              <button class="spin-btn up" onclick="adjustValue('heightAEX', 0.1)">+</button>
+            </div>
+          </div>
+          <div class="input-group" style="margin-top: 4px;">
+            <div class="input-label">当前子界面视图</div>
+            <select id="viewSelect">
+              <option value="packing">装柱缓冲液用量</option>
+              <option value="chrom">层析缓冲液用量</option>
+              <option value="all">所有缓冲液总量</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3 class="panel-title">层析柱体积及总配制量</h3>
+        <div class="metrics">
+          <div class="metric ac">
+            <span>AC 柱体积 (CV)</span>
+            <strong id="cvAC">0 L</strong>
+          </div>
+          <div class="metric hic">
+            <span>HIC 柱体积 (CV)</span>
+            <strong id="cvHIC">0 L</strong>
+          </div>
+          <div class="metric aex">
+            <span>AEX 柱体积 (CV)</span>
+            <strong id="cvAEX">0 L</strong>
+          </div>
+          <div class="metric total">
+            <span>当前视图理论总量</span>
+            <strong id="totalKg">0 kg</strong>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="table-head">
+        <div class="filters">
+          <label class="select-control">
+            <span>界面选择</span>
+            <select id="viewSelect2">
+              <option value="packing">装柱缓冲液用量</option>
+              <option value="chrom">层析缓冲液用量</option>
+              <option value="all">所有缓冲液总量</option>
+            </select>
+          </label>
+          <label class="check-control">
+            <input id="mergePacking" type="checkbox" checked>
+            <span>合并装柱缓冲液</span>
+          </label>
+          <label class="check-control">
+            <input id="showFormula" type="checkbox" checked>
+            <span>显示配方</span>
+          </label>
+          <label class="check-control">
+            <input id="showBasis" type="checkbox" checked>
+            <span>显示计算依据</span>
+          </label>
+          <label class="check-control">
+            <input id="showLineFlush" type="checkbox">
+            <span>管路清洗/排气用量</span>
+          </label>
+          <label class="check-control">
+            <input id="showSample" type="checkbox">
+            <span>取样量</span>
+          </label>
+          <!-- 新增配制量勾选框 -->
+          <label class="check-control">
+            <input id="showPreparation" type="checkbox">
+            <span>配制量</span>
+          </label>
+        </div>
+        <div class="view-note" id="viewNote"></div>
+      </div>
+      <div class="table-wrap" id="tableWrap">
+        <table id="resultTable">
+          <colgroup id="resultColgroup"></colgroup>
+          <thead>
+            <!-- Header will be dynamically populated in render() to prevent layout squeezing -->
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+      
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const columnMeta = {
+      AC: { label: "AC", diameterMm: 450 },
+      HIC: { label: "HIC", diameterMm: 600 },
+      AEX: { label: "AEX", diameterMm: 300 }
+    };
+
+    const buffers = [
+      { id: "GB03", desc: "装柱平衡液", name: "0.15M NaCl", phase: "装柱", fixed: 0, formula: "NaCl 8.77 g/kg", packing: [{ col: "AC", cv: 6, step: "AC装柱：平衡3CV+洗脱3CV" }, { col: "HIC", cv: 6, step: "HIC装柱：平衡3CV+洗脱3CV" }, { col: "AEX", cv: 6, step: "AEX装柱：平衡3CV+洗脱3CV" }] },
+      { id: "GB04", desc: "柱效测试液", name: "1 M NaCl", phase: "装柱", fixed: 0, formula: "NaCl 58.44 g/kg", packing: [{ fixed: 50, step: "装柱固定配制：50L（按50kg计）", phase: "装柱-固定配制" }] },
+      { id: "GB05", desc: "消毒液", name: "1 M NaOH", phase: "HIC/AEX消毒", fixed: 0, formula: "NaOH 40 g/kg", packing: [{ col: "HIC", cv: 4, step: "HIC装柱后消毒：4CV" }, { col: "AEX", cv: 4, step: "AEX装柱后消毒：4CV" }], chrom: [{ col: "HIC", cv: 8, step: "HIC层析：前处理4CV+后消毒4CV" }, { col: "AEX", cv: 8, step: "AEX层析：前处理4CV+后消毒4CV" }] },
+      { id: "GB06", desc: "消毒液", name: "0.5 M NaOH", phase: "AC消毒/手工清洗/超滤", fixed: 0, formula: "NaOH 20 g/kg", packing: [{ col: "AC", fixed: 50, step: "AC装柱手工清洗：50L（按50kg计）" }, { col: "AC", cv: 4, step: "AC装柱后消毒：4CV" }, { col: "HIC", fixed: 100, step: "HIC装柱手工清洗：100L（按100kg计）" }, { col: "AEX", fixed: 20, step: "AEX装柱手工清洗：20L（按20kg计）" }, { fixed: 30, step: "手工清洗固定配制：30L（按30kg计）", phase: "装柱-手工清洗" }], chrom: [{ col: "AC", cv: 8, step: "AC层析：前处理4CV+后消毒4CV" }, { fixed: 80, step: "UF：前处理40L+后处理40L（按80kg计）" }] },
+      { id: "GB08", desc: "保存液", name: "0.1 M NaOH", phase: "HIC/AEX保存/UF", fixed: 0, formula: "NaOH 4 g/kg", packing: [{ col: "HIC", cv: 3, step: "HIC装柱保存：3CV" }, { col: "AEX", cv: 3, step: "AEX装柱保存：3CV" }], chrom: [{ col: "HIC", cv: 3, step: "HIC层析保存：3CV" }, { col: "AEX", cv: 3, step: "AEX层析保存：3CV" }, { fixed: 10, step: "UF保存：10L（按10kg计）" }] },
+      { id: "BL01", desc: "2%苯甲醇", name: "2%苯甲醇", phase: "AC保存/装柱保存", fixed: 0, formula: "苯甲醇 20 g/kg", chrom: [{ col: "AC", cv: 3, step: "AC层析保存：3CV" }], packing: [{ col: "AC", cv: 3, step: "AC装柱保存：3CV" }] },
+      { id: "BL02", desc: "AC 平衡液", name: "10 mM L-His-HCl, 20 mM CaCl2, 50 mM NaCl, 0.02% PS80, pH 7.2", phase: "AC亲和", fixed: 0, formula: "L-His-HCl-H2O 2.10 g/kg；CaCl2-2H2O 2.94 g/kg；NaCl 2.92 g/kg；NaOH 0.38 g/kg；PS80 0.20 g/kg", chrom: [{ col: "AC", cv: 21, step: "AC：平衡5CV+淋洗5CV+淋洗5CV+后处理漂洗3CV+3CV" }] },
+      { id: "BL03", desc: "AC 清洗液", name: "20 mM L-His-HCl, 20 mM CaCl2, 150 mM NaCl, 0.02% PS80, pH 5.5", phase: "AC亲和", fixed: 0, formula: "L-His-HCl-H2O 4.19 g/kg；CaCl2-2H2O 2.94 g/kg；NaCl 8.77 g/kg；NaOH 0.14 g/kg；PS80 0.20 g/kg", chrom: [{ col: "AC", cv: 5, step: "AC淋洗2：5CV" }] },
+      { id: "BL04", desc: "AC 洗脱液", name: "20 mM L-His-HCl, 20 mM CaCl2, 500 mM L-Arg, 150 mM NaCl, 0.02% PS80, pH 4.3", phase: "AC亲和", fixed: 0, formula: "L-His-HCl-H2O 4.19 g/kg；CaCl2-2H2O 2.94 g/kg；NaCl 8.77 g/kg；PS80 0.20 g/kg；L-Arg-HCl 105.34 g/kg；HCl 0.219 g/kg", chrom: [{ col: "AC", cv: 10, step: "AC洗脱：10CV" }] },
+      { id: "BL05", desc: "1mol/L Tris", name: "1 M Tris", phase: "AC洗脱液pH调节/中间品深滤后pH调节", fixed: 0, formula: "Tris 121.14 g/kg", chrom: [{ fixed: 5, step: "AC洗脱液pH调节：5kg" }, { fixed: 5, step: "中间品深滤后pH调节：5kg" }] },
+      { id: "BL06", desc: "1mol/L HAC", name: "1 M HAC", phase: "AC亲和", fixed: 0, formula: "HAC 60.05 g/kg", chrom: [{ col: "AC", cv: 3, step: "AC后处理：1M HAC再生3CV" }] },
+      { id: "BL07", desc: "HIC 平衡液", name: "20 mM His, 20 mM CaCl2, 1.4M NaCl, 0.02%PS80, pH 7.0", phase: "HIC疏水", fixed: 0, formula: "L-His-HCl-H2O 4.19 g/kg；CaCl2-2H2O 2.94 g/kg；NaCl 8.77 g/kg；NaOH 0.69 g/kg；PS80 0.20 g/kg", chrom: [{ col: "HIC", cv: 10, step: "HIC：平衡5CV+淋洗5CV" }] },
+      { id: "BL08", desc: "HIC 洗脱液", name: "20 mM His, 20 mM CaCl2, 150mM NaCl, 200 mM L-Arg, 0.02%PS80, pH 7.0", phase: "HIC疏水", fixed: 0, formula: "L-His-HCl-H2O 4.19 g/kg；CaCl2-2H2O 2.94 g/kg；NaCl 8.77 g/kg；NaOH 0.78 g/kg；L-Arg-HCl 42.13 g/kg；PS80 0.20 g/kg", chrom: [{ col: "HIC", cv: 4, step: "HIC洗脱：4CV" }] },
+      { id: "BL09", desc: "HIC 再生/IDF 电导调节液", name: "20 mM His, 20 mM CaCl2, 0.02%PS80, pH 6.0", phase: "HIC再生/IDF调节", fixed: 0, formula: "L-His-HCl-H2O 4.19 g/kg；CaCl2-2H2O 2.94 g/kg；NaOH 0.38 g/kg；PS80 0.20 g/kg", chrom: [{ col: "HIC", cv: 3, step: "HIC再生：3CV" }, { fixed: 300, step: "IDF电导调节：固定配制300kg" }] },
+      { id: "BL10", desc: "HIC 电导调节液", name: "20 mM His, 20 mM CaCl2, 3M NaCl, 0.02%PS80, pH 7.0", phase: "HIC电导调节", fixed: 200, formula: "L-His-HCl-H2O 4.19 g/kg；CaCl2-2H2O 2.94 g/kg；NaCl 175.32 g/kg；NaOH 0.70 g/kg；PS80 0.20 g/kg", note: "HIC电导调节液固定配制200kg" },
+      { id: "BL11", desc: "IDF 平衡液", name: "20 mM His, 20 mM CaCl2, 50mM NaCl, 0.02%PS80, pH 6.0", phase: "IDF", fixed: 100, formula: "L-His-HCl-H2O 4.19 g/kg；CaCl2-2H2O 2.94 g/kg；NaCl 2.92 g/kg；NaOH 0.37 g/kg；PS80 0.20 g/kg", note: "IDF固定配制100kg（实际使用50kg左右）" },
+      { id: "BL12", desc: "AEX 平衡液", name: "20 mM His, 20 mM CaCl2, 50 mM NaCl, pH 7.0", phase: "AEX阴离子", fixed: 0, formula: "L-His-HCl-H2O 4.19 g/kg；CaCl2-2H2O 2.94 g/kg；NaCl 2.92 g/kg；NaOH 0.72 g/kg", chrom: [{ col: "AEX", cv: 8, step: "AEX：前处理平衡5CV+上样后平衡3CV" }] },
+      { id: "BL13", desc: "AEX 清洗液", name: "20 mM His, 20 mM CaCl2, 310mM NaCl, pH 7.0", phase: "AEX阴离子", fixed: 0, formula: "L-His-HCl-H2O 4.19 g/kg；CaCl2-2H2O 2.94 g/kg；NaCl 18.12 g/kg；NaOH 0.71 g/kg", chrom: [{ col: "AEX", cv: 5, step: "AEX Wash2：5CV" }] },
+      { id: "BL14", desc: "AEX 洗脱液", name: "20 mM His, 20 mM CaCl2, 410 mM NaCl, pH 7.0", phase: "AEX洗脱", fixed: 0, formula: "L-His-HCl-H2O 4.19 g/kg；CaCl2-2H2O 2.94 g/kg；NaCl 23.96 g/kg；NaOH 0.72 g/kg", chrom: [{ col: "AEX", cv: 6, step: "AEX洗脱：6CV" }] },
+      { id: "PB15", desc: "阴离子再生缓冲液", name: "2M NaCl", phase: "AEX阴离子", fixed: 0, formula: "NaCl 116.88 g/kg", chrom: [{ col: "AEX", cv: 8, step: "AEX：2M NaCl前处理5CV+后处理再生3CV" }] },
+      { id: "BL15", desc: "UF/NF 平衡液", name: "36 mg/mL NaCl, 1.2 mg/mL CaCl2, 10 mM L-His, pH 7.0", phase: "UF/NF/原液配制", fixed: 0, formula: "L-His-HCl-H2O 0.24 g/kg；L-His 1.37 g/kg；CaCl2-2H2O 1.20 g/kg；NaCl 36.00 g/kg", chrom: [{ fixed: 250, step: "UF固定配制：250kg（实际使用200kg左右）" }, { fixed: 10, step: "纳米膜平衡：10L/m² x 1m² = 10kg" }, { fixed: 10, step: "原液配制：10kg" }] },
+      { id: "BL16", desc: "聚山梨酯 20 母液", name: "聚山梨酯20母液(1%w/w)", phase: "原液配制", fixed: 2, formula: "聚山梨酯20 10 g/kg；BL15 990 g/kg", note: "非CV项，暂固化2kg" },
+      { id: "BL17", desc: "蔗糖母液", name: "蔗糖母液(30%w/w)", phase: "原液配制", fixed: 4, formula: "蔗糖 300 g/kg；BL15 700 g/kg", note: "原液配制4kg" },
+      { id: "BL18", desc: "S/D 母液（LrFⅧ）", name: "10% PS80, 3% TNBP", phase: "SD病毒灭活", fixed: 100, formula: "聚山梨酯80 100 g/kg；磷酸三丁酯 30 g/kg", note: "SD灭活固定配制100kg" },
+      { id: "BL19", displayId: "", desc: "1mol盐酸", name: "1 M HCl", phase: "AC调节", fixed: 0, formula: "根据工艺需求配制", chrom: [{ fixed: 2, step: "AC调节：2kg" }] },
+      { id: "BL20", displayId: "", desc: "2.5M氢氧化钠", name: "2.5 M NaOH", phase: "AC调节", fixed: 0, formula: "根据工艺需求配制", chrom: [{ fixed: 2, step: "AC调节：2kg" }] }
+    ];
+
+    const packingIds = ["GB03", "GB04", "GB05", "GB06", "GB08", "BL01"];
+    const chromIds = buffers.map(b => b.id).filter(id => !packingIds.includes(id) || ["GB05", "GB06", "GB08", "BL01"].includes(id));
+
+    const STORAGE_KEY = "long8-buffer-app:v12";
+    const columnDefaults = {
+      info: { label: "缓冲液信息", width: 320, min: 220, className: "col-info" },
+      phase: { label: "使用阶段", width: 120, min: 90, className: "col-phase" },
+      lineFlush: { label: "管洗用量 (kg)", width: 110, min: 86, className: "num col-extra" },
+      sample: { label: "取样量 (kg)", width: 110, min: 86, className: "num col-extra" },
+      total: { label: "理论总用量 (kg)", width: 145, min: 105, className: "num col-total" },
+      preparation: { label: "配制量 (kg)", width: 110, min: 86, className: "num col-extra" },
+      basis: { label: "计算依据", width: 360, min: 160, className: "col-basis" }
+    };
+    const userInputs = {};
+    const basisEdits = {};
+    const editingBasisKeys = new Set();
+    let columnWidths = {};
+    let serverAvailable = false;
+    let sharedVersion = 0;
+    let saveTimer = null;
+    let remoteStream = null;
+    let isApplyingRemote = false;
+
+    function $(id) { return document.getElementById(id); }
+
+    function getDefaultState() {
+      return {
+        heights: { AC: 10, HIC: 10, AEX: 10 },
+        view: "packing",
+        toggles: {
+          mergePacking: true,
+          showFormula: true,
+          showBasis: true,
+          showLineFlush: false,
+          showSample: false,
+          showPreparation: false
+        },
+        columnWidths: {},
+        userInputs: {},
+        basisEdits: {}
+      };
+    }
+
+    function getSharedState() {
+      return {
+        heights: {
+          AC: num("heightAC"),
+          HIC: num("heightHIC"),
+          AEX: num("heightAEX")
+        },
+        userInputs: JSON.parse(JSON.stringify(userInputs)),
+        basisEdits: JSON.parse(JSON.stringify(basisEdits))
+      };
+    }
+
+    function getCurrentState() {
+      return {
+        heights: {
+          AC: num("heightAC"),
+          HIC: num("heightHIC"),
+          AEX: num("heightAEX")
+        },
+        view: $("viewSelect").value,
+        toggles: {
+          mergePacking: $("mergePacking").checked,
+          showFormula: $("showFormula").checked,
+          showBasis: $("showBasis").checked,
+          showLineFlush: $("showLineFlush").checked,
+          showSample: $("showSample").checked,
+          showPreparation: $("showPreparation").checked
+        },
+        columnWidths: { ...columnWidths },
+        userInputs: JSON.parse(JSON.stringify(userInputs)),
+        basisEdits: JSON.parse(JSON.stringify(basisEdits))
+      };
+    }
+
+    function setSyncStatus(text, mode = "offline") {
+      const el = $("syncStatus");
+      if (!el) return;
+      el.textContent = text;
+      el.classList.toggle("online", mode === "online");
+      el.classList.toggle("offline", mode !== "online");
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(getCurrentState()));
+      } catch (err) {
+        console.warn("状态保存失败", err);
+      }
+      if (!isApplyingRemote) {
+        scheduleServerSave();
+      }
+    }
+
+    function scheduleServerSave() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(pushStateToServer, 350);
+    }
+
+    async function pushStateToServer() {
+      if (location.protocol === "file:") {
+        serverAvailable = false;
+        setSyncStatus("本机模式", "offline");
+        return;
+      }
+      try {
+        const res = await fetch("/api/state", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ version: sharedVersion, state: getSharedState() })
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        sharedVersion = Number(data.version) || sharedVersion;
+        serverAvailable = true;
+        setSyncStatus("已同步", "online");
+      } catch (err) {
+        serverAvailable = false;
+        setSyncStatus("离线保存", "offline");
+        console.warn("服务器同步失败，已保存在本机", err);
+      }
+    }
+
+    async function pullStateFromServer() {
+      if (location.protocol === "file:") {
+        setSyncStatus("本机模式", "offline");
+        return false;
+      }
+      try {
+        const res = await fetch("/api/state", { cache: "no-store" });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        sharedVersion = Number(data.version) || 0;
+        if (data.state && typeof data.state === "object") {
+          isApplyingRemote = true;
+          applySharedState(data.state);
+          isApplyingRemote = false;
+          render();
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(getCurrentState()));
+        }
+        serverAvailable = true;
+        setSyncStatus("已连接", "online");
+        return true;
+      } catch (err) {
+        serverAvailable = false;
+        setSyncStatus("离线保存", "offline");
+        console.warn("服务器读取失败，使用本机数据", err);
+        return false;
+      }
+    }
+
+    function connectRemoteUpdates() {
+      if (location.protocol === "file:" || !window.EventSource) return;
+      if (remoteStream) remoteStream.close();
+      remoteStream = new EventSource("/api/events");
+      remoteStream.addEventListener("state", event => {
+        try {
+          const data = JSON.parse(event.data);
+          const version = Number(data.version) || 0;
+          if (!data.state || version <= sharedVersion) return;
+          sharedVersion = version;
+          isApplyingRemote = true;
+          applySharedState(data.state);
+          isApplyingRemote = false;
+          render();
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(getCurrentState()));
+          setSyncStatus("已更新", "online");
+        } catch (err) {
+          console.warn("远程更新解析失败", err);
+        }
+      });
+      remoteStream.onerror = () => {
+        if (serverAvailable) setSyncStatus("重连中", "offline");
+      };
+      remoteStream.onopen = () => {
+        serverAvailable = true;
+        setSyncStatus("已连接", "online");
+      };
+    }
+
+    function loadState() {
+      const defaults = getDefaultState();
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return defaults;
+        const parsed = JSON.parse(raw);
+        return {
+          heights: {
+            ...defaults.heights,
+            ...(parsed.heights || {})
+          },
+          view: typeof parsed.view === "string" ? parsed.view : defaults.view,
+          toggles: {
+            ...defaults.toggles,
+            ...(parsed.toggles || {})
+          },
+          columnWidths: parsed.columnWidths && typeof parsed.columnWidths === "object" ? parsed.columnWidths : {},
+          userInputs: parsed.userInputs && typeof parsed.userInputs === "object" ? parsed.userInputs : {},
+          basisEdits: parsed.basisEdits && typeof parsed.basisEdits === "object" ? parsed.basisEdits : {}
+        };
+      } catch (err) {
+        console.warn("状态读取失败，已回退默认值", err);
+        return defaults;
+      }
+    }
+
+    function applySharedState(state) {
+      const defaults = getDefaultState();
+      const heights = { ...defaults.heights, ...(state.heights || {}) };
+      $("heightAC").value = heights.AC;
+      $("heightHIC").value = heights.HIC;
+      $("heightAEX").value = heights.AEX;
+
+      Object.keys(userInputs).forEach(key => delete userInputs[key]);
+      Object.entries(state.userInputs || {}).forEach(([key, value]) => {
+        userInputs[key] = {
+          lineFlush: Number(value?.lineFlush) || 0,
+          sample: Number(value?.sample) || 0,
+          preparation: Number(value?.preparation) || 0
+        };
+      });
+
+      Object.keys(basisEdits).forEach(key => delete basisEdits[key]);
+      Object.entries(state.basisEdits || {}).forEach(([key, value]) => {
+        if (!value || typeof value !== "object") return;
+        basisEdits[key] = {};
+        if (Number.isFinite(Number(value.cv))) basisEdits[key].cv = Number(value.cv);
+        if (Number.isFinite(Number(value.fixed))) basisEdits[key].fixed = Number(value.fixed);
+        if (Number.isFinite(Number(value.percent))) basisEdits[key].percent = Number(value.percent);
+        if (typeof value.step === "string") basisEdits[key].step = value.step;
+      });
+    }
+
+    function applyState(state) {
+      $("heightAC").value = state.heights.AC;
+      $("heightHIC").value = state.heights.HIC;
+      $("heightAEX").value = state.heights.AEX;
+      $("viewSelect").value = state.view;
+      $("viewSelect2").value = state.view;
+      $("mergePacking").checked = !!state.toggles.mergePacking;
+      $("showFormula").checked = !!state.toggles.showFormula;
+      $("showBasis").checked = !!state.toggles.showBasis;
+      $("showLineFlush").checked = !!state.toggles.showLineFlush;
+      $("showSample").checked = !!state.toggles.showSample;
+      $("showPreparation").checked = !!state.toggles.showPreparation;
+
+      columnWidths = {};
+      Object.entries(state.columnWidths || {}).forEach(([key, value]) => {
+        if (columnDefaults[key] && Number.isFinite(Number(value))) {
+          columnWidths[key] = Math.max(columnDefaults[key].min, Number(value));
+        }
+      });
+
+      Object.keys(userInputs).forEach(key => delete userInputs[key]);
+      Object.entries(state.userInputs || {}).forEach(([key, value]) => {
+        userInputs[key] = {
+          lineFlush: Number(value?.lineFlush) || 0,
+          sample: Number(value?.sample) || 0,
+          preparation: Number(value?.preparation) || 0
+        };
+      });
+
+      Object.keys(basisEdits).forEach(key => delete basisEdits[key]);
+      Object.entries(state.basisEdits || {}).forEach(([key, value]) => {
+        if (!value || typeof value !== "object") return;
+        basisEdits[key] = {};
+        if (Number.isFinite(Number(value.cv))) basisEdits[key].cv = Number(value.cv);
+        if (Number.isFinite(Number(value.fixed))) basisEdits[key].fixed = Number(value.fixed);
+        if (Number.isFinite(Number(value.percent))) basisEdits[key].percent = Number(value.percent);
+        if (typeof value.step === "string") basisEdits[key].step = value.step;
+      });
+    }
+
+    function resetState() {
+      const defaults = getDefaultState();
+      localStorage.removeItem(STORAGE_KEY);
+      applyState(defaults);
+      render();
+      saveState();
+    }
+
+    function num(id) {
+      const value = parseFloat($(id).value);
+      return Number.isFinite(value) ? value : 0;
+    }
+
+    function getBufferKey(buffer) {
+      return buffer.id;
+    }
+
+    function getBufferDisplayId(buffer) {
+      return buffer.displayId ?? buffer.id;
+    }
+
+    function getInputKey(row) {
+      const key = getBufferKey(row.buffer);
+      return row.phase && row.phase.startsWith('装柱-') ? `${key}_${row.phase}` : key;
+    }
+
+    function getColumnWidth(key) {
+      const meta = columnDefaults[key];
+      return Math.max(meta.min, Number(columnWidths[key]) || meta.width);
+    }
+
+    function visibleColumns() {
+      return [
+        "info",
+        "phase",
+        $("showLineFlush").checked ? "lineFlush" : null,
+        $("showSample").checked ? "sample" : null,
+        "total",
+        $("showPreparation").checked ? "preparation" : null,
+        $("showBasis").checked ? "basis" : null
+      ].filter(Boolean);
+    }
+
+    function headerCell(key) {
+      const meta = columnDefaults[key];
+      return `<th class="${meta.className} resizable" data-col-key="${key}">
+        <span class="th-label">${meta.label}</span>
+        <span class="col-resizer" role="separator" aria-label="调整${meta.label}列宽"></span>
+      </th>`;
+    }
+
+    function applyColumnLayout(keys) {
+      const colgroup = $("resultColgroup");
+      const widths = keys.map(key => getColumnWidth(key));
+      colgroup.innerHTML = keys.map((key, index) => `<col data-col-key="${key}" style="width: ${widths[index]}px">`).join("");
+
+      const table = $("resultTable");
+      const totalWidth = widths.reduce((sum, width) => sum + width, 0);
+      table.style.width = `${Math.max(totalWidth, $("tableWrap").clientWidth || 0)}px`;
+    }
+
+    function bindColumnResizers(keys) {
+      const table = $("resultTable");
+      table.querySelectorAll(".col-resizer").forEach(handle => {
+        const startResize = (event, usePointerCapture = false) => {
+          event.preventDefault();
+          const th = handle.closest("th");
+          const key = th.dataset.colKey;
+          const startX = event.clientX;
+          const startWidth = getColumnWidth(key);
+
+          th.classList.add("is-resizing");
+          document.body.classList.add("is-column-resizing");
+          handle.dataset.resizing = "1";
+
+          if (usePointerCapture) {
+            handle.setPointerCapture(event.pointerId);
+          }
+
+          const onMove = moveEvent => {
+            const meta = columnDefaults[key];
+            columnWidths[key] = Math.max(meta.min, Math.round(startWidth + moveEvent.clientX - startX));
+            applyColumnLayout(keys);
+          };
+
+          const endResize = endEvent => {
+            if (usePointerCapture && handle.hasPointerCapture(endEvent.pointerId)) {
+              handle.releasePointerCapture(endEvent.pointerId);
+            }
+            th.classList.remove("is-resizing");
+            document.body.classList.remove("is-column-resizing");
+            delete handle.dataset.resizing;
+            document.removeEventListener("mousemove", onMove);
+            document.removeEventListener("mouseup", endResize);
+            handle.removeEventListener("pointermove", onMove);
+            handle.removeEventListener("pointerup", endResize);
+            handle.removeEventListener("pointercancel", endResize);
+            saveState();
+          };
+
+          if (usePointerCapture) {
+            handle.addEventListener("pointermove", onMove);
+            handle.addEventListener("pointerup", endResize);
+            handle.addEventListener("pointercancel", endResize);
+          } else {
+            document.addEventListener("mousemove", onMove);
+            document.addEventListener("mouseup", endResize);
+          }
+        };
+
+        handle.addEventListener("pointerdown", event => {
+          startResize(event, true);
+        });
+
+        handle.addEventListener("mousedown", event => {
+          if (handle.dataset.resizing === "1") return;
+          startResize(event);
+        });
+      });
+    }
+
+    function adjustValue(id, delta) {
+      const el = $(id);
+      let val = parseFloat(el.value) || 0;
+      val = Math.round((val + delta) * 10) / 10;
+      const min = parseFloat(el.min);
+      const max = parseFloat(el.max);
+      if (val >= min && val <= max) {
+        el.value = val;
+        render();
+        saveState();
+      }
+    }
+
+    function cvLiters(key) {
+      const height = Math.min(15, Math.max(10, num("height" + key)));
+      const radiusCm = columnMeta[key].diameterMm / 20;
+      return Math.PI * radiusCm * radiusCm * height / 1000;
+    }
+
+    function fmt(value, digits = 1) {
+      digits = Number.isFinite(Number(digits)) ? Math.max(0, Math.min(20, Math.floor(Number(digits)))) : 1;
+      value = Number.isFinite(Number(value)) ? Number(value) : 0;
+      return value.toLocaleString("zh-CN", {
+        maximumFractionDigits: digits,
+        minimumFractionDigits: Math.min(digits, value > 0 && value < 10 ? 1 : 0)
+      });
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#39;");
+    }
+
+    function hasOwn(obj, key) {
+      return Object.prototype.hasOwnProperty.call(obj, key);
+    }
+
+    function getBasisKey(buffer, view, index) {
+      return `${buffer.id}:${view}:${index}`;
+    }
+
+    function getFixedBasisKey(buffer) {
+      return `${buffer.id}:fixed`;
+    }
+
+    function effectiveUsageItem(buffer, view, item, index) {
+      const key = getBasisKey(buffer, view, index);
+      const edit = basisEdits[key] || {};
+      const next = { ...item };
+      if (typeof edit.step === "string") next.step = edit.step;
+      if (hasOwn(item, "cv") && Number.isFinite(Number(edit.cv))) next.cv = Number(edit.cv);
+      if (hasOwn(item, "fixed") && Number.isFinite(Number(edit.fixed))) next.fixed = Number(edit.fixed);
+      if (hasOwn(item, "percent") && Number.isFinite(Number(edit.percent))) next.percent = Number(edit.percent);
+      return { key, item: next };
+    }
+
+    function effectiveBufferFixed(buffer) {
+      const key = getFixedBasisKey(buffer);
+      const edit = basisEdits[key] || {};
+      const fixed = Number.isFinite(Number(edit.fixed)) ? Number(edit.fixed) : Number(buffer.fixed) || 0;
+      const step = typeof edit.step === "string" ? edit.step : (buffer.note || "非CV项，固定数值");
+      return { key, fixed, step };
+    }
+
+    function getBasisValueType(item) {
+      if (hasOwn(item, "fixed")) return "fixed";
+      if (hasOwn(item, "percent")) return "percent";
+      return "cv";
+    }
+
+    function getBasisValue(item) {
+      const type = getBasisValueType(item);
+      return Number(item[type]) || 0;
+    }
+
+    function calcUsageItem(item, cvs) {
+      if (hasOwn(item, "fixed")) {
+        return {
+          amount: Number(item.fixed) || 0,
+          label: item.label || `${fmt(Number(item.fixed) || 0, 1)} kg`
+        };
+      }
+
+      const cv = cvs[item.col] || 0;
+      if (hasOwn(item, "percent")) {
+        const amount = cv * item.percent;
+        return {
+          amount,
+          label: `${fmt(cv)} L x ${fmt(item.percent * 100, 1)}% = ${fmt(amount)} kg`
+        };
+      }
+
+      const amount = cv * (item.cv || 0);
+      return {
+        amount,
+        label: `${fmt(cv)} L x ${fmt(item.cv || 0)} CV = ${fmt(amount)} kg`
+      };
+    }
+
+    function calcSteps(buffer, view, cvs) {
+      const source = view === "packing" ? (buffer.packing || []) : (buffer.chrom || []);
+      const steps = [];
+      let amount = 0;
+
+      source.forEach((rawItem, index) => {
+        const { key, item } = effectiveUsageItem(buffer, view, rawItem, index);
+        const usage = calcUsageItem(item, cvs);
+        amount += usage.amount;
+        steps.push({
+          step: item.step,
+          label: usage.label,
+          key,
+          valueType: getBasisValueType(item),
+          value: getBasisValue(item)
+        });
+      });
+
+      if (view === "packing" && buffer.minPacking && amount > 0 && amount < buffer.minPacking) {
+        steps.push({ step: "最低配制量", label: `理论${fmt(amount)} kg，按${fmt(buffer.minPacking, 0)} kg显示` });
+        amount = buffer.minPacking;
+      }
+
+      const fixedFallback = effectiveBufferFixed(buffer);
+      if (amount === 0 && view !== "packing" && fixedFallback.fixed > 0) {
+        amount = fixedFallback.fixed;
+        steps.push({
+          step: fixedFallback.step,
+          label: `${fmt(fixedFallback.fixed, 1)} kg`,
+          key: fixedFallback.key,
+          valueType: "fixed",
+          value: fixedFallback.fixed
+        });
+      } else if (view !== "packing" && amount === 0 && buffer.note) {
+        steps.push({
+          step: fixedFallback.step,
+          label: "0 kg",
+          key: fixedFallback.key,
+          valueType: "fixed",
+          value: fixedFallback.fixed
+        });
+      }
+
+      return { amount, steps };
+    }
+
+    function calcOnePackingStep(buffer, item, cvs, index = 0) {
+      const effective = effectiveUsageItem(buffer, "packing", item, index);
+      item = effective.item;
+      const usage = calcUsageItem(item, cvs);
+      return {
+        amount: usage.amount,
+        steps: [{
+          step: item.step,
+          label: usage.label,
+          key: effective.key,
+          valueType: getBasisValueType(item),
+          value: getBasisValue(item)
+        }]
+      };
+    }
+
+    function packingSplitRows(cvs) {
+      const rows = [];
+      for (const id of packingIds) {
+        const buffer = buffers.find(b => b.id === id);
+        for (const [index, item] of (buffer.packing || []).entries()) {
+          const calc = calcOnePackingStep(buffer, item, cvs, index);
+          rows.push({ buffer, amount: calc.amount, steps: calc.steps, phase: item.phase || `装柱-${item.col || "固定配制"}` });
+        }
+        if (!buffer.packing || buffer.packing.length === 0) {
+          rows.push({ buffer, amount: 0, steps: buffer.note ? [{ step: buffer.note, label: "0 kg" }] : [], phase: buffer.phase });
+        }
+      }
+      return rows;
+    }
+
+    function rowsForView(view) {
+      if (view === "packing") return packingIds.map(id => buffers.find(b => b.id === id));
+      if (view === "chrom") return chromIds.map(id => buffers.find(b => b.id === id));
+      return buffers;
+    }
+
+    function syncView(value) {
+      $("viewSelect").value = value;
+      $("viewSelect2").value = value;
+      render();
+    }
+
+    // 根据使用阶段文本生成对应的背景色标签类
+    function getPhaseClass(phase) {
+      if (!phase) return '';
+      const p = phase.toUpperCase();
+      if (p.includes('AC')) return 'ac';
+      if (p.includes('HIC')) return 'hic';
+      if (p.includes('AEX')) return 'aex';
+      return '';
+    }
+
+    // 只在打字时就地局部更新“总用量”，避免 innerHTML 重画引发闪烁或卡顿
+    function updateTotalsOnly() {
+      let globalTotal = 0;
+      const rows = document.querySelectorAll('#resultTable tbody tr');
+      rows.forEach(tr => {
+        const baseAmount = parseFloat(tr.dataset.baseAmount) || 0;
+        const key = tr.dataset.inputKey;
+        const lineFlush = userInputs[key]?.lineFlush || 0;
+        const sample = userInputs[key]?.sample || 0;
+
+        const finalAmount = baseAmount + lineFlush + sample;
+        globalTotal += finalAmount;
+
+        const strongEl = tr.querySelector('.row-total');
+        if (strongEl) {
+          strongEl.textContent = fmt(finalAmount);
+        }
+      });
+      $("totalKg").textContent = `${fmt(globalTotal)} kg`;
+    }
+
+    function basisLineHtml(step) {
+      if (!step.key) {
+        return `
+          <div class="basis-line">
+            <span class="basis-step">${escapeHtml(step.step)}</span>
+            <span class="pill">${escapeHtml(step.label)}</span>
+          </div>
+        `;
+      }
+
+      const unit = step.valueType === "fixed" ? "kg" : (step.valueType === "percent" ? "%" : "CV");
+      const value = step.valueType === "percent" ? (Number(step.value) * 100) : Number(step.value);
+      const stepValue = escapeHtml(step.step);
+      const numericValue = Number.isFinite(value) ? value : 0;
+      const safeKey = escapeHtml(step.key);
+
+      if (!editingBasisKeys.has(step.key)) {
+        return `
+          <div class="basis-line">
+            <span class="basis-readonly">
+              <span class="basis-step">${stepValue}</span>
+              <span class="pill">${escapeHtml(step.label)}</span>
+              <button type="button" class="basis-edit-toggle" data-basis-key="${safeKey}">编辑</button>
+            </span>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="basis-line">
+          <input class="basis-step-input basis-edit" data-basis-key="${safeKey}" data-type="step" value="${stepValue}" title="修改说明文字">
+          <input class="basis-number basis-edit" type="number" min="0" step="0.1" data-basis-key="${safeKey}" data-type="${step.valueType}" value="${numericValue}">
+          <span class="basis-unit">${unit}</span>
+          <span class="pill">${escapeHtml(step.label)}</span>
+          <button type="button" class="basis-edit-toggle active" data-basis-key="${safeKey}">完成</button>
+        </div>
+      `;
+    }
+
+    function render() {
+      const view = $("viewSelect").value;
+      $("viewSelect2").value = view;
+      const mergePacking = $("mergePacking").checked;
+      const showFormula = $("showFormula").checked;
+      const showBasis = $("showBasis").checked;
+      const showLineFlush = $("showLineFlush").checked;
+      const showSample = $("showSample").checked;
+      const showPreparation = $("showPreparation").checked; // 新增勾选状态
+      const cvs = { AC: cvLiters("AC"), HIC: cvLiters("HIC"), AEX: cvLiters("AEX") };
+      
+      $("cvAC").textContent = `${fmt(cvs.AC)} L`;
+      $("cvHIC").textContent = `${fmt(cvs.HIC)} L`;
+      $("cvAEX").textContent = `${fmt(cvs.AEX)} L`;
+
+      const notes = {
+        packing: mergePacking ? "显示装柱阶段6种缓冲液；AC/HIC/AEX及固定配制量按编号合并。" : "装柱缓冲液按AC、HIC、AEX及固定配制量展开。",
+        chrom: "显示层析及下游相关缓冲液；非CV项采用默认固化数值。",
+        all: mergePacking ? "显示全部26种缓冲液；勾选时把装柱缓冲液用量合并计入总量。" : "显示全部26种缓冲液；未勾选时总量仅统计层析及下游阶段。"
+      };
+      $("viewNote").textContent = notes[view];
+
+      const tableWrap = $("tableWrap");
+      const columns = visibleColumns();
+
+      // 1. 动态生成表头，并应用用户可拖拽的列宽
+      const thead = $("resultTable").querySelector("thead");
+      thead.innerHTML = `<tr>${columns.map(headerCell).join("")}</tr>`;
+      applyColumnLayout(columns);
+      bindColumnResizers(columns);
+
+      // 2. 动态调整紧凑视图宽度比例（在多列显露时释放宽度限制）
+      if (showBasis || showLineFlush || showSample || showPreparation) {
+        tableWrap.classList.remove("compact-view");
+      } else {
+        tableWrap.classList.add("compact-view");
+      }
+
+      let total = 0;
+      let tableRows = [];
+
+      if (view === "packing" && !mergePacking) {
+        tableRows = packingSplitRows(cvs);
+      } else {
+        tableRows = rowsForView(view).map(buffer => {
+          const calcView = view === "all" ? "chrom" : view;
+          const chrom = calcSteps(buffer, calcView, cvs);
+          const packing = view === "all" && mergePacking ? calcSteps(buffer, "packing", cvs) : { amount: 0, steps: [] };
+          const amount = chrom.amount + packing.amount;
+          const steps = [...chrom.steps, ...packing.steps];
+          return { buffer, amount, steps, phase: buffer.phase };
+        });
+      }
+
+      const rows = tableRows.map(row => {
+        const { buffer } = row;
+        const key = getInputKey(row);
+        const steps = row.steps;
+
+        const lineFlushVal = userInputs[key]?.lineFlush || 0;
+        const sampleVal = userInputs[key]?.sample || 0;
+        const prepVal = userInputs[key]?.preparation || 0; // 读取持有的配制量
+        const finalAmount = row.amount + lineFlushVal + sampleVal;
+        total += finalAmount;
+
+        const basis = steps.length ? steps.map(basisLineHtml).join("") : `<span class="muted">0 kg；暂无公式计算依据</span>`;
+
+        const formulaHtml = showFormula ? `
+          <div class="formula" title="配方/规格">${escapeHtml(buffer.name)}</div>
+        ` : '';
+        const basisHtml = showBasis ? `<td class="col-basis"><div class="basis">${basis}</div></td>` : '';
+        const phaseClass = getPhaseClass(row.phase);
+
+        // 激活状态高亮
+        const lineFlushClass = lineFlushVal > 0 ? "extra-input active" : "extra-input";
+        const sampleClass = sampleVal > 0 ? "extra-input active" : "extra-input";
+        const prepClass = prepVal > 0 ? "extra-input active" : "extra-input";
+
+        // 3. 构建动态数据列 td 单元
+        const tdLineFlushHtml = showLineFlush ? `
+          <td class="num col-extra">
+            <input type="number" step="0.1" min="0" placeholder="0" 
+                   class="${lineFlushClass}" 
+                   data-key="${key}" data-type="lineFlush" 
+                   value="${lineFlushVal > 0 ? lineFlushVal : ''}">
+          </td>
+        ` : '';
+
+        const tdSampleHtml = showSample ? `
+          <td class="num col-extra">
+            <input type="number" step="0.1" min="0" placeholder="0" 
+                   class="${sampleClass}" 
+                   data-key="${key}" data-type="sample" 
+                   value="${sampleVal > 0 ? sampleVal : ''}">
+          </td>
+        ` : '';
+
+        const tdPrepHtml = showPreparation ? `
+          <td class="num col-extra">
+            <input type="number" step="0.1" min="0" placeholder="0" 
+                   class="${prepClass}" 
+                   data-key="${key}" data-type="preparation" 
+                   value="${prepVal > 0 ? prepVal : ''}">
+          </td>
+        ` : '';
+
+        return `<tr data-base-amount="${row.amount}" data-input-key="${key}">
+          <td class="col-info">
+            <div class="buffer-info-cell">
+              <span class="id">${escapeHtml(getBufferDisplayId(buffer))}</span>
+              <div class="name-wrapper">
+                <div><span class="name" title="${escapeHtml(buffer.formula)}">${escapeHtml(buffer.desc)}</span></div>
+                ${formulaHtml}
+              </div>
+            </div>
+          </td>
+          <td class="col-phase"><span class="phase-badge ${phaseClass}">${escapeHtml(row.phase)}</span></td>
+          ${tdLineFlushHtml}
+          ${tdSampleHtml}
+          <td class="num col-total">
+            <strong class="row-total" style="font-size: 16px; color: var(--ink);">${fmt(finalAmount)}</strong>
+          </td>
+          ${tdPrepHtml}
+          ${basisHtml}
+        </tr>`;
+      });
+
+      $("totalKg").textContent = `${fmt(total)} kg`;
+      $("resultTable").querySelector("tbody").innerHTML = rows.join("");
+    }
+
+    //高度定制极简 Excel (CSV) 报表导出函数
+    function exportCsv() {
+      const view = $("viewSelect").value;
+      const mergePacking = $("mergePacking").checked;
+      const cvs = { AC: cvLiters("AC"), HIC: cvLiters("HIC"), AEX: cvLiters("AEX") };
+      const lines = [];
+
+      // 1. 层析柱元数据表头（柱高与柱体积）
+      lines.push(["层析柱规格", "柱高 (cm)", "柱体积 (L)"]);
+      lines.push(["AC 亲和层析柱", num("heightAC").toFixed(1), cvs.AC.toFixed(1)]);
+      lines.push(["HIC 疏水层析柱", num("heightHIC").toFixed(1), cvs.HIC.toFixed(1)]);
+      lines.push(["AEX 阴离子层析柱", num("heightAEX").toFixed(1), cvs.AEX.toFixed(1)]);
+      lines.push([]); // 插入空白间隔行
+
+      // 2. 缓冲液列表主体表头
+      lines.push(["代码", "缓冲液名称", "使用阶段", "管路冲洗用量 (kg)", "取样量 (kg)", "理论总用量 (kg)", "配制量 (kg)"]);
+
+      let exportRows = [];
+      if (view === "packing" && !mergePacking) {
+        exportRows = packingSplitRows(cvs);
+      } else {
+        exportRows = rowsForView(view).map(buffer => {
+          const chrom = calcSteps(buffer, view === "all" ? "chrom" : view, cvs);
+          const packing = view === "all" && mergePacking ? calcSteps(buffer, "packing", cvs) : { amount: 0, steps: [] };
+          return { buffer, amount: chrom.amount + packing.amount, steps: [...chrom.steps, ...packing.steps], phase: buffer.phase };
+        });
+      }
+
+      for (const row of exportRows) {
+        const key = getInputKey(row);
+        const lineFlushVal = userInputs[key]?.lineFlush || 0;
+        const sampleVal = userInputs[key]?.sample || 0;
+        const prepVal = userInputs[key]?.preparation || 0;
+        const finalAmount = row.amount + lineFlushVal + sampleVal;
+
+        // 仅导出代码、名称、使用阶段、管路清洗用量、取样量、理论总用量、配制量。其他一概不输出。
+        lines.push([
+          getBufferDisplayId(row.buffer),
+          row.buffer.desc,
+          row.phase,
+          lineFlushVal.toFixed(1),
+          sampleVal.toFixed(1),
+          finalAmount.toFixed(1),
+          prepVal.toFixed(1)
+        ]);
+      }
+
+      // 将数组组装为标准的带 BOM 格式的 CSV
+      const csv = lines.map(row => {
+        if (row.length === 0) return "";
+        return row.map(cell => `"${String(cell).replaceAll('"', '""')}"`).join(",");
+      }).join("\n");
+
+      const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `长效八下游缓冲液数据报表_${view}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+
+    // 事件委托与就地数据持久化
+    document.querySelector('#resultTable').addEventListener('input', (e) => {
+      if (e.target.classList.contains('extra-input')) {
+        const key = e.target.dataset.key;
+        const type = e.target.dataset.type;
+        const val = parseFloat(e.target.value) || 0;
+
+        if (!userInputs[key]) userInputs[key] = { lineFlush: 0, sample: 0, preparation: 0 };
+        userInputs[key][type] = val;
+
+        if (val > 0) {
+          e.target.classList.add('active');
+        } else {
+          e.target.classList.remove('active');
+        }
+
+        updateTotalsOnly();
+        saveState();
+      }
+
+      if (e.target.classList.contains('basis-edit')) {
+        const key = e.target.dataset.basisKey;
+        const type = e.target.dataset.type;
+        if (!basisEdits[key]) basisEdits[key] = {};
+        if (type === "step") {
+          basisEdits[key].step = e.target.value;
+        } else if (type === "percent") {
+          basisEdits[key].percent = (parseFloat(e.target.value) || 0) / 100;
+        } else {
+          basisEdits[key][type] = parseFloat(e.target.value) || 0;
+        }
+        saveState();
+      }
+    });
+
+    document.querySelector('#resultTable').addEventListener('click', (e) => {
+      const button = e.target.closest('.basis-edit-toggle');
+      if (!button) return;
+
+      const key = button.dataset.basisKey;
+      if (editingBasisKeys.has(key)) {
+        editingBasisKeys.delete(key);
+      } else {
+        editingBasisKeys.add(key);
+      }
+      render();
+    });
+
+    document.querySelector('#resultTable').addEventListener('change', (e) => {
+      if (e.target.classList.contains('basis-edit')) {
+        render();
+        saveState();
+      }
+    });
+
+    ["heightAC", "heightHIC", "heightAEX"].forEach(id => $(id).addEventListener("input", () => {
+      render();
+      saveState();
+    }));
+    $("viewSelect").addEventListener("change", e => {
+      syncView(e.target.value);
+      saveState();
+    });
+    $("viewSelect2").addEventListener("change", e => {
+      syncView(e.target.value);
+      saveState();
+    });
+    $("mergePacking").addEventListener("change", () => {
+      render();
+      saveState();
+    });
+    $("showFormula").addEventListener("change", () => {
+      render();
+      saveState();
+    });
+    $("showBasis").addEventListener("change", () => {
+      render();
+      saveState();
+    });
+    
+    $("showLineFlush").addEventListener("change", () => {
+      render();
+      saveState();
+    });
+    $("showSample").addEventListener("change", () => {
+      render();
+      saveState();
+    });
+    $("showPreparation").addEventListener("change", () => {
+      render();
+      saveState();
+    }); // 绑定配制量显隐变化
+
+    $("csvBtn").addEventListener("click", exportCsv);
+    $("resetStateBtn").addEventListener("click", resetState);
+
+    async function initApp() {
+      applyState(loadState());
+      render();
+      await pullStateFromServer();
+      connectRemoteUpdates();
+    }
+
+    initApp();
+  </script>
+</body>
+</html>
