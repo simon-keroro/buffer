@@ -6,11 +6,11 @@
   <title>长效八缓冲液用量计算 V16</title>
   <style>
     :root {
-      --bg: #f3f5f4;
+      --bg: #f5f6f6;
       --panel: #ffffff;
       --ink: #1a2521;
       --muted: #5a6b65;
-      --line: #e2e8e5;
+      --line: #e4e9e7;
       --soft-green: #eef7f4;
       --soft-blue: #eef6fc;
       --soft-amber: #fdf6ec;
@@ -20,9 +20,9 @@
       --blue: #2b537a;
       --amber: #8f500a;
       --gray: #4f5855;
-      --shadow: 0 10px 30px rgba(13, 29, 23, 0.05), 0 1px 3px rgba(0, 0, 0, 0.02);
-      --shadow-hover: 0 16px 40px rgba(13, 29, 23, 0.09);
-      --radius: 12px;
+      --shadow: 0 12px 32px rgba(20, 30, 26, 0.05), 0 1px 2px rgba(20, 30, 26, 0.04);
+      --shadow-hover: 0 12px 32px rgba(20, 30, 26, 0.05), 0 1px 2px rgba(20, 30, 26, 0.04);
+      --radius: 10px;
     }
 
     * { box-sizing: border-box; }
@@ -41,8 +41,9 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 16px 32px;
-      background: var(--panel);
+      padding: 14px 24px;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: saturate(180%) blur(16px);
       border-bottom: 1px solid var(--line);
       position: sticky;
       top: 0;
@@ -144,11 +145,15 @@
     }
 
     main {
-      padding: 24px 32px 40px;
+      padding: 20px 20px 36px;
       display: grid;
-      grid-template-columns: 360px 1fr;
-      gap: 24px;
+      grid-template-columns: 300px minmax(0, 1fr);
+      gap: 20px;
       align-items: start;
+    }
+
+    main > .panel {
+      min-width: 0;
     }
 
     .panel {
@@ -165,26 +170,26 @@
     }
 
     .panel-title {
-      padding: 16px 20px;
+      padding: 14px 16px;
       margin: 0;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0;
       color: var(--muted);
       border-bottom: 1px solid var(--line);
-      background: #fafbfa;
+      background: #fbfcfb;
     }
 
     .control-sidebar {
       display: grid;
-      gap: 20px;
+      gap: 16px;
+      min-width: 0;
     }
 
     .inputs {
-      padding: 20px;
+      padding: 16px;
       display: grid;
-      gap: 16px;
+      gap: 14px;
     }
 
     .input-group {
@@ -246,17 +251,17 @@
     .metrics {
       display: grid;
       grid-template-columns: 1fr;
-      gap: 12px;
-      padding: 20px;
+      gap: 10px;
+      padding: 16px;
       border-top: 1px solid var(--line);
-      background: #fcfdfe;
+      background: #fbfcfc;
     }
 
     .metric {
       background: var(--panel);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 12px 16px;
+      padding: 12px 14px 12px 16px;
       display: flex;
       flex-direction: column;
       position: relative;
@@ -289,7 +294,7 @@
 
     .metric strong {
       margin-top: 4px;
-      font-size: 20px;
+      font-size: 19px;
       font-weight: 700;
       color: var(--ink);
     }
@@ -299,20 +304,21 @@
     }
 
     .table-head {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      align-items: center;
-      padding: 16px 20px;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 12px 16px;
+      align-items: start;
+      padding: 14px 16px;
       border-bottom: 1px solid var(--line);
-      background: #fafbfa;
+      background: #fbfcfb;
     }
 
     .filters {
       display: flex;
       flex-wrap: wrap;
-      gap: 16px;
+      gap: 8px;
       align-items: center;
+      min-width: 0;
     }
 
     .select-control {
@@ -322,26 +328,35 @@
       color: var(--ink);
       font-size: 13px;
       font-weight: 500;
+      white-space: nowrap;
     }
 
     .select-control select {
       height: 34px;
+      min-width: 146px;
     }
 
     .check-control {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 6px;
+      min-height: 34px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
       cursor: pointer;
       user-select: none;
       font-size: 13px;
-      font-weight: 500;
+      font-weight: 600;
       color: var(--muted);
-      transition: color 0.2s;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+      white-space: nowrap;
     }
 
     .check-control:hover {
       color: var(--ink);
+      border-color: #cbd6d1;
     }
 
     .check-control input {
@@ -352,13 +367,19 @@
       margin: 0;
     }
 
+    .check-control:has(input:checked) {
+      color: var(--green);
+      background: var(--soft-green);
+      border-color: rgba(13, 92, 73, 0.18);
+    }
+
     .view-note {
-      margin-left: auto;
+      justify-self: end;
       color: var(--muted);
       font-size: 12px;
-      background: var(--soft-gray);
-      padding: 6px 12px;
-      border-radius: 6px;
+      background: #fff;
+      padding: 7px 12px;
+      border-radius: 8px;
       border: 1px solid var(--line);
       max-width: 100%;
     }
@@ -394,7 +415,7 @@
 
     /* 限制标准视图宽度，防止单行过度横向延展 */
     .table-wrap.compact-view {
-      max-width: 860px;
+      max-width: 760px;
     }
 
     table {
@@ -406,19 +427,18 @@
     }
 
     th, td {
-      padding: 12px 16px;
+      padding: 12px 14px;
       border-bottom: 1px solid var(--line);
       text-align: left;
       vertical-align: middle;
     }
 
     th {
-      background: #f4f6f5;
+      background: #f6f8f7;
       color: var(--muted);
       font-weight: 600;
       font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0;
       position: sticky;
       top: 0;
       z-index: 10;
@@ -470,7 +490,7 @@
     /* 精确分配列的默认宽度，完美防止挤压 */
     .col-info { width: 320px; }
     .col-phase { width: 120px; }
-    .col-extra { width: 105px; } /* 新增列的合适尺寸 */
+    .col-extra { width: 112px; } /* 新增列的合适尺寸 */
     .col-total { width: 130px; }
     .col-basis { width: auto; }
 
@@ -525,7 +545,7 @@
     .formula {
       font-size: 12px;
       color: var(--muted);
-      max-width: 280px;
+      max-width: 230px;
       line-height: 1.4;
       word-break: break-all;
     }
@@ -547,7 +567,7 @@
     .basis {
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 8px;
     }
 
     .basis-line {
@@ -556,6 +576,7 @@
       gap: 8px;
       font-size: 12px;
       flex-wrap: wrap;
+      width: 100%;
     }
 
     .basis-step {
@@ -563,15 +584,16 @@
     }
 
     .basis-readonly {
-      display: inline-flex;
+      display: grid;
+      grid-template-columns: minmax(170px, 1fr) max-content max-content;
       align-items: center;
       gap: 8px;
-      flex-wrap: wrap;
       min-width: 0;
+      width: 100%;
     }
 
     .basis-step-input {
-      width: min(100%, 280px);
+      width: min(100%, 300px);
       min-width: 180px;
       height: 30px;
       padding: 0 8px;
@@ -581,7 +603,7 @@
     }
 
     .basis-label-input {
-      width: min(100%, 240px);
+      width: min(100%, 300px);
       min-width: 180px;
       height: 30px;
       padding: 0 8px;
@@ -632,11 +654,12 @@
       font-size: 11px;
       font-family: monospace;
       font-weight: 500;
+      white-space: nowrap;
     }
 
     /* 附加数据输入框精细化样式 - 升级后不带任何繁琐文本 */
     .extra-input {
-      width: 75px;
+      width: 82px;
       height: 28px;
       font-size: 13px;
       padding: 0 8px;
@@ -736,13 +759,12 @@
         grid-template-columns: 1fr;
       }
       .table-head {
-        flex-direction: column;
-        align-items: flex-start;
+        grid-template-columns: 1fr;
         gap: 12px;
       }
       .view-note {
         width: 100%;
-        margin-left: 0;
+        justify-self: stretch;
       }
     }
   </style>
@@ -936,13 +958,13 @@
 
     const STORAGE_KEY = "long8-buffer-app:v12";
     const columnDefaults = {
-      info: { label: "缓冲液信息", width: 320, min: 220, className: "col-info" },
+      info: { label: "缓冲液信息", width: 280, min: 220, className: "col-info" },
       phase: { label: "使用阶段", width: 120, min: 90, className: "col-phase" },
-      lineFlush: { label: "管洗用量 (kg)", width: 110, min: 86, className: "num col-extra" },
-      sample: { label: "取样量 (kg)", width: 110, min: 86, className: "num col-extra" },
-      total: { label: "理论总用量 (kg)", width: 145, min: 105, className: "num col-total" },
-      preparation: { label: "配制量 (kg)", width: 110, min: 86, className: "num col-extra" },
-      basis: { label: "计算依据", width: 360, min: 160, className: "col-basis" }
+      lineFlush: { label: "管洗用量 (kg)", width: 112, min: 96, className: "num col-extra" },
+      sample: { label: "取样量 (kg)", width: 112, min: 96, className: "num col-extra" },
+      total: { label: "理论总用量 (kg)", width: 138, min: 112, className: "num col-total" },
+      preparation: { label: "配制量 (kg)", width: 112, min: 96, className: "num col-extra" },
+      basis: { label: "计算依据", width: 560, min: 360, className: "col-basis" }
     };
     const userInputs = {};
     const basisEdits = {};
