@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>长效八缓冲液用量计算 V12</title>
+  <title>长效八缓冲液用量计算 V16</title>
   <style>
     :root {
       --bg: #f3f5f4;
@@ -580,6 +580,16 @@
       background: #fff;
     }
 
+    .basis-label-input {
+      width: min(100%, 240px);
+      min-width: 180px;
+      height: 30px;
+      padding: 0 8px;
+      text-align: left;
+      font-size: 12px;
+      background: #fff;
+    }
+
     .basis-number {
       width: 76px;
       height: 30px;
@@ -741,7 +751,7 @@
   <header>
     <div class="brand">
       <div class="brand-logo"></div>
-      <h1>长效八下游缓冲液用量计算 V12</h1>
+      <h1>长效八下游缓冲液用量计算 V16</h1>
     </div>
     <div class="top-actions">
       <span id="syncStatus" class="sync-status offline">本机模式</span>
@@ -1153,6 +1163,7 @@
         if (Number.isFinite(Number(value.fixed))) basisEdits[key].fixed = Number(value.fixed);
         if (Number.isFinite(Number(value.percent))) basisEdits[key].percent = Number(value.percent);
         if (typeof value.step === "string") basisEdits[key].step = value.step;
+        if (typeof value.label === "string") basisEdits[key].label = value.label;
       });
     }
 
@@ -1193,6 +1204,7 @@
         if (Number.isFinite(Number(value.fixed))) basisEdits[key].fixed = Number(value.fixed);
         if (Number.isFinite(Number(value.percent))) basisEdits[key].percent = Number(value.percent);
         if (typeof value.step === "string") basisEdits[key].step = value.step;
+        if (typeof value.label === "string") basisEdits[key].label = value.label;
       });
     }
 
@@ -1374,7 +1386,8 @@
       if (hasOwn(item, "cv") && Number.isFinite(Number(edit.cv))) next.cv = Number(edit.cv);
       if (hasOwn(item, "fixed") && Number.isFinite(Number(edit.fixed))) next.fixed = Number(edit.fixed);
       if (hasOwn(item, "percent") && Number.isFinite(Number(edit.percent))) next.percent = Number(edit.percent);
-      return { key, item: next };
+      const label = typeof edit.label === "string" ? edit.label : null;
+      return { key, item: next, label };
     }
 
     function effectiveBufferFixed(buffer) {
@@ -1382,7 +1395,8 @@
       const edit = basisEdits[key] || {};
       const fixed = Number.isFinite(Number(edit.fixed)) ? Number(edit.fixed) : Number(buffer.fixed) || 0;
       const step = typeof edit.step === "string" ? edit.step : (buffer.note || "非CV项，固定数值");
-      return { key, fixed, step };
+      const label = typeof edit.label === "string" ? edit.label : null;
+      return { key, fixed, step, label };
     }
 
     function getBasisValueType(item) {
@@ -1426,12 +1440,12 @@
       let amount = 0;
 
       source.forEach((rawItem, index) => {
-        const { key, item } = effectiveUsageItem(buffer, view, rawItem, index);
+        const { key, item, label } = effectiveUsageItem(buffer, view, rawItem, index);
         const usage = calcUsageItem(item, cvs);
         amount += usage.amount;
         steps.push({
           step: item.step,
-          label: usage.label,
+          label: label ?? usage.label,
           key,
           valueType: getBasisValueType(item),
           value: getBasisValue(item)
@@ -1448,7 +1462,7 @@
         amount = fixedFallback.fixed;
         steps.push({
           step: fixedFallback.step,
-          label: `${fmt(fixedFallback.fixed, 1)} kg`,
+          label: fixedFallback.label ?? `${fmt(fixedFallback.fixed, 1)} kg`,
           key: fixedFallback.key,
           valueType: "fixed",
           value: fixedFallback.fixed
@@ -1456,7 +1470,7 @@
       } else if (view !== "packing" && amount === 0 && buffer.note) {
         steps.push({
           step: fixedFallback.step,
-          label: "0 kg",
+          label: fixedFallback.label ?? "0 kg",
           key: fixedFallback.key,
           valueType: "fixed",
           value: fixedFallback.fixed
@@ -1474,7 +1488,7 @@
         amount: usage.amount,
         steps: [{
           step: item.step,
-          label: usage.label,
+          label: effective.label ?? usage.label,
           key: effective.key,
           valueType: getBasisValueType(item),
           value: getBasisValue(item)
@@ -1553,6 +1567,7 @@
       const unit = step.valueType === "fixed" ? "kg" : (step.valueType === "percent" ? "%" : "CV");
       const value = step.valueType === "percent" ? (Number(step.value) * 100) : Number(step.value);
       const stepValue = escapeHtml(step.step);
+      const labelValue = escapeHtml(step.label);
       const numericValue = Number.isFinite(value) ? value : 0;
       const safeKey = escapeHtml(step.key);
 
@@ -1573,7 +1588,7 @@
           <input class="basis-step-input basis-edit" data-basis-key="${safeKey}" data-type="step" value="${stepValue}" title="修改说明文字">
           <input class="basis-number basis-edit" type="number" min="0" step="0.1" data-basis-key="${safeKey}" data-type="${step.valueType}" value="${numericValue}">
           <span class="basis-unit">${unit}</span>
-          <span class="pill">${escapeHtml(step.label)}</span>
+          <input class="basis-label-input basis-edit" data-basis-key="${safeKey}" data-type="label" value="${labelValue}" title="修改计算文字">
           <button type="button" class="basis-edit-toggle active" data-basis-key="${safeKey}">完成</button>
         </div>
       `;
@@ -1797,6 +1812,8 @@
         if (!basisEdits[key]) basisEdits[key] = {};
         if (type === "step") {
           basisEdits[key].step = e.target.value;
+        } else if (type === "label") {
+          basisEdits[key].label = e.target.value;
         } else if (type === "percent") {
           basisEdits[key].percent = (parseFloat(e.target.value) || 0) / 100;
         } else {
