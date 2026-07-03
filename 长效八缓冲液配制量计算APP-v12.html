@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>长效八缓冲液用量计算APP V17</title>
+  <title>长效八缓冲液用量计算APP V18</title>
   <style>
     :root {
       --bg: #f5f6f6;
@@ -773,7 +773,7 @@
   <header>
     <div class="brand">
       <div class="brand-logo"></div>
-      <h1>长效八下游缓冲液用量计算APP V17</h1>
+      <h1>长效八下游缓冲液用量计算APP V18</h1>
     </div>
     <div class="top-actions">
       <span id="syncStatus" class="sync-status offline">本机模式</span>
@@ -880,7 +880,7 @@
             <span>合并装柱缓冲液</span>
           </label>
           <label class="check-control">
-            <input id="showFormula" type="checkbox" checked>
+            <input id="showFormula" type="checkbox">
             <span>显示配方</span>
           </label>
           <label class="check-control">
@@ -966,9 +966,11 @@
       preparation: { label: "配制量 (kg)", width: 112, min: 96, className: "num col-extra" },
       basis: { label: "计算依据", width: 560, min: 360, className: "col-basis" }
     };
+    const ACTION_PASSWORD = "xieyi";
     const userInputs = {};
     const basisEdits = {};
     const editingBasisKeys = new Set();
+    let formulaUnlocked = false;
     let columnWidths = {};
     let serverAvailable = false;
     let sharedVersion = 0;
@@ -978,13 +980,22 @@
 
     function $(id) { return document.getElementById(id); }
 
+    function requireActionPassword(actionName) {
+      const input = window.prompt(`${actionName}需要输入密码`);
+      if (input === ACTION_PASSWORD) return true;
+      if (input !== null) {
+        window.alert("密码错误，操作已取消。");
+      }
+      return false;
+    }
+
     function getDefaultState() {
       return {
         heights: { AC: 10, HIC: 10, AEX: 10 },
         view: "packing",
         toggles: {
           mergePacking: true,
-          showFormula: true,
+          showFormula: false,
           showBasis: true,
           showLineFlush: false,
           showSample: false,
@@ -1196,7 +1207,7 @@
       $("viewSelect").value = state.view;
       $("viewSelect2").value = state.view;
       $("mergePacking").checked = !!state.toggles.mergePacking;
-      $("showFormula").checked = !!state.toggles.showFormula;
+      $("showFormula").checked = formulaUnlocked && !!state.toggles.showFormula;
       $("showBasis").checked = !!state.toggles.showBasis;
       $("showLineFlush").checked = !!state.toggles.showLineFlush;
       $("showSample").checked = !!state.toggles.showSample;
@@ -1231,6 +1242,8 @@
     }
 
     function resetState() {
+      if (!requireActionPassword("恢复默认")) return;
+      formulaUnlocked = false;
       const defaults = getDefaultState();
       localStorage.removeItem(STORAGE_KEY);
       applyState(defaults);
@@ -1881,7 +1894,22 @@
       render();
       saveState();
     });
-    $("showFormula").addEventListener("change", () => {
+    $("showFormula").addEventListener("change", e => {
+      if (!e.target.checked) {
+        formulaUnlocked = false;
+        render();
+        saveState();
+        return;
+      }
+      if (e.target.checked && !formulaUnlocked) {
+        if (!requireActionPassword("显示配方")) {
+          e.target.checked = false;
+          render();
+          saveState();
+          return;
+        }
+        formulaUnlocked = true;
+      }
       render();
       saveState();
     });
