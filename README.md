@@ -21,7 +21,9 @@ npm start
 http://localhost:3000
 ```
 
-共享数据保存在 `data/state.json`。这个文件不要提交到 GitHub，已经写进 `.gitignore`。
+共享数据默认保存在项目目录外的 `../buffer-data/state.json`。这样以后 `git pull` 更新代码时，不会碰到已经填写的管洗用量、取样量、配制量和计算依据勘误。
+
+如果旧版本已经产生了 `data/state.json`，新版服务第一次启动时会自动迁移到 `../buffer-data/state.json`。
 
 ## GitHub 设置
 
@@ -64,6 +66,7 @@ WorkingDirectory=/opt/buffer
 ExecStart=/usr/bin/node server.js
 Restart=always
 Environment=PORT=3000
+Environment=BUFFER_DATA_DIR=/opt/buffer-data
 Environment=APP_USER=buffer
 Environment=APP_PASSWORD=请替换成强密码
 
@@ -98,3 +101,27 @@ server {
 ```
 
 生产环境建议配置 HTTPS，并设置 `APP_PASSWORD`，避免外部人员直接修改数据。
+
+## 升级时保护数据
+
+推荐 VPS 目录结构：
+
+```text
+/opt/buffer       # GitHub 拉取的代码
+/opt/buffer-data  # 服务器长期保存的数据，不放进 Git 仓库
+```
+
+以后升级只更新 `/opt/buffer`：
+
+```bash
+cd /opt/buffer
+git pull
+sudo systemctl restart buffer-app
+```
+
+不要删除 `/opt/buffer-data`。如需备份，重点备份：
+
+```text
+/opt/buffer-data/state.json
+/opt/buffer-data/backups/
+```

@@ -6,11 +6,14 @@ const crypto = require("node:crypto");
 const PORT = Number(process.env.PORT) || 3000;
 const HOST = process.env.HOST || "0.0.0.0";
 const APP_FILE = path.join(__dirname, "长效八缓冲液配制量计算APP-v12.html");
-const DATA_DIR = path.join(__dirname, "data");
+const LEGACY_DATA_DIR = path.join(__dirname, "data");
+const DATA_DIR = path.resolve(process.env.BUFFER_DATA_DIR || process.env.DATA_DIR || path.join(__dirname, "..", "buffer-data"));
 const STATE_FILE = path.join(DATA_DIR, "state.json");
+const LEGACY_STATE_FILE = path.join(LEGACY_DATA_DIR, "state.json");
 const MAX_BODY_BYTES = 1024 * 1024;
 
 let shared = { version: 0, state: {} };
+let startupBackupDone = false;
 const clients = new Set();
 
 function send(res, status, body, headers = {}) {
@@ -48,6 +51,11 @@ function isAuthorized(req) {
 
 async function ensureStateLoaded() {
   await fs.mkdir(DATA_DIR, { recursive: true });
+  if (STATE_FILE !== LEGACY_STATE_FILE && !(await fileExists(STATE_FILE)) && await fileExists(LEGACY_STATE_FILE)) {
+    await fs.copyFile(LEGACY_STATE_FILE, STATE_FILE);
+    console.log(`已把旧数据迁移到仓库外：${STATE_FILE}`);
+  }
+
   try {
     const raw = await fs.readFile(STATE_FILE, "utf8");
     const parsed = JSON.parse(raw);
@@ -60,20 +68,40 @@ async function ensureStateLoaded() {
   } catch (err) {
     if (err.code !== "ENOENT") {
       console.warn("读取共享数据失败，已使用空数据启动：", err.message);
+      await backupCurrentState("corrupt");
     }
     await saveState();
   }
 }
 
+async function fileExists(file) {
+  try {
+    await fs.access(file);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function backupCurrentState(reason = "backup") {
+  if (startupBackupDone || !(await fileExists(STATE_FILE))) return;
+  startupBackupDone = true;
+  const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+  const backupDir = path.join(DATA_DIR, "backups");
+  await fs.mkdir(backupDir, { recursive: true });
+  await fs.copyFile(STATE_FILE, path.join(backupDir, `state-${reason}-${stamp}.json`));
+}
+
 async function saveState() {
   await fs.mkdir(DATA_DIR, { recursive: true });
+  await backupCurrentState("before-write");
   const tmp = `${STATE_FILE}.tmp`;
   await fs.writeFile(tmp, JSON.stringify(shared, null, 2), "utf8");
   await fs.rename(tmp, STATE_FILE);
 }
 
-function broadcastState() {
-  const payload = `event: state\ndata: ${JSON.stringify(shared)}\n\n`;
+function broadcastState(originClientId = "") {
+  const payload = `event: state\ndata: ${JSON.stringify({ ...shared, originClientId })}\n\n`;
   for (const res of clients) {
     res.write(payload);
   }
@@ -131,12 +159,13 @@ async function handle(req, res) {
       send(res, 400, { error: "state 必须是对象" });
       return;
     }
+    const originClientId = typeof data.clientId === "string" ? data.clientId : "";
     shared = {
       version: Date.now(),
       state: data.state
     };
     await saveState();
-    broadcastState();
+    broadcastState(originClientId);
     send(res, 200, shared);
     return;
   }
@@ -168,5 +197,6 @@ ensureStateLoaded().then(() => {
 
   server.listen(PORT, HOST, () => {
     console.log(`长效八缓冲液 APP 已启动：http://${HOST}:${PORT}`);
+    console.log(`共享数据文件：${STATE_FILE}`);
   });
 });

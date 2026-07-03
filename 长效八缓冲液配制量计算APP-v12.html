@@ -967,6 +967,7 @@
       basis: { label: "计算依据", width: 560, min: 360, className: "col-basis" }
     };
     const ACTION_PASSWORD = "xieyi";
+    const CLIENT_ID = window.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
     const userInputs = {};
     const basisEdits = {};
     const editingBasisKeys = new Set();
@@ -1075,7 +1076,7 @@
         const res = await fetch("/api/state", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ version: sharedVersion, state: getSharedState() })
+          body: JSON.stringify({ version: sharedVersion, clientId: CLIENT_ID, state: getSharedState() })
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
@@ -1127,6 +1128,10 @@
           const version = Number(data.version) || 0;
           if (!data.state || version <= sharedVersion) return;
           sharedVersion = version;
+          if (data.originClientId === CLIENT_ID) {
+            setSyncStatus("已同步", "online");
+            return;
+          }
           isApplyingRemote = true;
           applySharedState(data.state);
           isApplyingRemote = false;
