@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>长效八缓冲液用量计算APP V18</title>
+  <title>长效八缓冲液用量计算APP V19</title>
   <style>
     :root {
       --bg: #f5f6f6;
@@ -773,7 +773,7 @@
   <header>
     <div class="brand">
       <div class="brand-logo"></div>
-      <h1>长效八下游缓冲液用量计算APP V18</h1>
+      <h1>长效八下游缓冲液用量计算APP V19</h1>
     </div>
     <div class="top-actions">
       <span id="syncStatus" class="sync-status offline">本机模式</span>
@@ -927,10 +927,12 @@
     const buffers = [
       { id: "GB03", desc: "装柱平衡液", name: "0.15M NaCl", phase: "装柱", fixed: 0, formula: "NaCl 8.77 g/kg", packing: [{ col: "AC", cv: 6, step: "AC装柱：平衡3CV+洗脱3CV" }, { col: "HIC", cv: 6, step: "HIC装柱：平衡3CV+洗脱3CV" }, { col: "AEX", cv: 6, step: "AEX装柱：平衡3CV+洗脱3CV" }] },
       { id: "GB04", desc: "柱效测试液", name: "1 M NaCl", phase: "装柱", fixed: 0, formula: "NaCl 58.44 g/kg", packing: [{ fixed: 50, step: "装柱固定配制：50L（按50kg计）", phase: "装柱-固定配制" }] },
-      { id: "GB05", desc: "消毒液", name: "1 M NaOH", phase: "HIC/AEX消毒", fixed: 0, formula: "NaOH 40 g/kg", packing: [{ col: "HIC", cv: 4, step: "HIC装柱后消毒：4CV" }, { col: "AEX", cv: 4, step: "AEX装柱后消毒：4CV" }], chrom: [{ col: "HIC", cv: 8, step: "HIC层析：前处理4CV+后消毒4CV" }, { col: "AEX", cv: 8, step: "AEX层析：前处理4CV+后消毒4CV" }] },
-      { id: "GB06", desc: "消毒液", name: "0.5 M NaOH", phase: "AC消毒/手工清洗/超滤", fixed: 0, formula: "NaOH 20 g/kg", packing: [{ col: "AC", fixed: 50, step: "AC装柱手工清洗：50L（按50kg计）" }, { col: "AC", cv: 4, step: "AC装柱后消毒：4CV" }, { col: "HIC", fixed: 100, step: "HIC装柱手工清洗：100L（按100kg计）" }, { col: "AEX", fixed: 20, step: "AEX装柱手工清洗：20L（按20kg计）" }, { fixed: 30, step: "手工清洗固定配制：30L（按30kg计）", phase: "装柱-手工清洗" }], chrom: [{ col: "AC", cv: 8, step: "AC层析：前处理4CV+后消毒4CV" }, { fixed: 80, step: "UF：前处理40L+后处理40L（按80kg计）" }] },
-      { id: "GB08", desc: "保存液", name: "0.1 M NaOH", phase: "HIC/AEX保存/UF", fixed: 0, formula: "NaOH 4 g/kg", packing: [{ col: "HIC", cv: 3, step: "HIC装柱保存：3CV" }, { col: "AEX", cv: 3, step: "AEX装柱保存：3CV" }], chrom: [{ col: "HIC", cv: 3, step: "HIC层析保存：3CV" }, { col: "AEX", cv: 3, step: "AEX层析保存：3CV" }, { fixed: 10, step: "UF保存：10L（按10kg计）" }] },
-      { id: "BL01", desc: "2%苯甲醇", name: "2%苯甲醇", phase: "AC保存/装柱保存", fixed: 0, formula: "苯甲醇 20 g/kg", chrom: [{ col: "AC", cv: 3, step: "AC层析保存：3CV" }], packing: [{ col: "AC", cv: 3, step: "AC装柱保存：3CV" }] },
+      { id: "GB05", desc: "消毒液", name: "1 M NaOH", phase: "HIC/AEX消毒", fixed: 0, formula: "NaOH 40 g/kg", chrom: [{ col: "HIC", cv: 8, step: "HIC层析：前处理4CV+后消毒4CV" }, { col: "AEX", cv: 8, step: "AEX层析：前处理4CV+后消毒4CV" }] },
+      { id: "GB06", desc: "消毒液", name: "0.5 M NaOH", phase: "AC消毒/手工清洗/超滤", fixed: 0, formula: "NaOH 20 g/kg", chrom: [{ col: "AC", cv: 8, step: "AC层析：前处理4CV+后消毒4CV" }, { fixed: 80, step: "UF：前处理40L+后处理40L（按80kg计）" }] },
+      { id: "GB08", desc: "保存液", name: "0.1 M NaOH", phase: "HIC/AEX保存/UF", fixed: 0, formula: "NaOH 4 g/kg", chrom: [{ col: "HIC", cv: 3, step: "HIC层析保存：3CV" }, { col: "AEX", cv: 3, step: "AEX层析保存：3CV" }, { fixed: 10, step: "UF保存：10L（按10kg计）" }] },
+      { id: "BL01", desc: "2%苯甲醇", name: "2%苯甲醇", phase: "AC/HIC/AEX装柱保存", fixed: 0, formula: "苯甲醇 20 g/kg", chrom: [{ col: "AC", cv: 3, step: "AC层析保存：3CV" }], packing: [{ col: "AC", cv: 3, step: "AC装柱保存：3CV" }, { col: "HIC", cv: 3, step: "HIC装柱保存：3CV" }, { col: "AEX", cv: 3, step: "AEX装柱保存：3CV" }] },
+      { id: "PK_NAOH10", displayId: "", desc: "10mM NaOH", name: "10mM NaOH", phase: "AC/HIC/AEX装柱保存", fixed: 0, formula: "NaOH 0.40 g/kg", packing: [{ col: "AC", cv: 3, step: "AC装柱保存：3CV" }, { col: "HIC", cv: 3, step: "HIC装柱保存：3CV" }, { col: "AEX", cv: 3, step: "AEX装柱保存：3CV" }] },
+      { id: "PK_ETHANOL20", displayId: "", desc: "20%乙醇", name: "20%乙醇", phase: "AC/HIC/AEX装柱保存", fixed: 0, formula: "乙醇 20%（v/v）", packing: [{ col: "AC", cv: 3, step: "AC装柱保存：3CV" }, { col: "HIC", cv: 3, step: "HIC装柱保存：3CV" }, { col: "AEX", cv: 3, step: "AEX装柱保存：3CV" }] },
       { id: "BL02", desc: "AC 平衡液", name: "10 mM L-His-HCl, 20 mM CaCl2, 50 mM NaCl, 0.02% PS80, pH 7.2", phase: "AC亲和", fixed: 0, formula: "L-His-HCl-H2O 2.10 g/kg；CaCl2-2H2O 2.94 g/kg；NaCl 2.92 g/kg；NaOH 0.38 g/kg；PS80 0.20 g/kg", chrom: [{ col: "AC", cv: 21, step: "AC：平衡5CV+淋洗5CV+淋洗5CV+后处理漂洗3CV+3CV" }] },
       { id: "BL03", desc: "AC 清洗液", name: "20 mM L-His-HCl, 20 mM CaCl2, 150 mM NaCl, 0.02% PS80, pH 5.5", phase: "AC亲和", fixed: 0, formula: "L-His-HCl-H2O 4.19 g/kg；CaCl2-2H2O 2.94 g/kg；NaCl 8.77 g/kg；NaOH 0.14 g/kg；PS80 0.20 g/kg", chrom: [{ col: "AC", cv: 5, step: "AC淋洗2：5CV" }] },
       { id: "BL04", desc: "AC 洗脱液", name: "20 mM L-His-HCl, 20 mM CaCl2, 500 mM L-Arg, 150 mM NaCl, 0.02% PS80, pH 4.3", phase: "AC亲和", fixed: 0, formula: "L-His-HCl-H2O 4.19 g/kg；CaCl2-2H2O 2.94 g/kg；NaCl 8.77 g/kg；PS80 0.20 g/kg；L-Arg-HCl 105.34 g/kg；HCl 0.219 g/kg", chrom: [{ col: "AC", cv: 10, step: "AC洗脱：10CV" }] },
@@ -953,8 +955,8 @@
       { id: "BL20", displayId: "", desc: "2.5M氢氧化钠", name: "2.5 M NaOH", phase: "AC调节", fixed: 0, formula: "根据工艺需求配制", chrom: [{ fixed: 2, step: "AC调节：2kg" }] }
     ];
 
-    const packingIds = ["GB03", "GB04", "GB05", "GB06", "GB08", "BL01"];
-    const chromIds = buffers.map(b => b.id).filter(id => !packingIds.includes(id) || ["GB05", "GB06", "GB08", "BL01"].includes(id));
+    const packingIds = ["GB03", "GB04", "BL01", "PK_NAOH10", "PK_ETHANOL20"];
+    const chromIds = buffers.map(b => b.id).filter(id => !packingIds.includes(id) || ["BL01"].includes(id));
 
     const STORAGE_KEY = "long8-buffer-app:v12";
     const columnDefaults = {
@@ -1520,37 +1522,6 @@
       return { amount, steps };
     }
 
-    function calcOnePackingStep(buffer, item, cvs, index = 0) {
-      const effective = effectiveUsageItem(buffer, "packing", item, index);
-      item = effective.item;
-      const usage = calcUsageItem(item, cvs);
-      return {
-        amount: usage.amount,
-        steps: [{
-          step: item.step,
-          label: effective.label ?? usage.label,
-          key: effective.key,
-          valueType: getBasisValueType(item),
-          value: getBasisValue(item)
-        }]
-      };
-    }
-
-    function packingSplitRows(cvs) {
-      const rows = [];
-      for (const id of packingIds) {
-        const buffer = buffers.find(b => b.id === id);
-        for (const [index, item] of (buffer.packing || []).entries()) {
-          const calc = calcOnePackingStep(buffer, item, cvs, index);
-          rows.push({ buffer, amount: calc.amount, steps: calc.steps, phase: item.phase || `装柱-${item.col || "固定配制"}` });
-        }
-        if (!buffer.packing || buffer.packing.length === 0) {
-          rows.push({ buffer, amount: 0, steps: buffer.note ? [{ step: buffer.note, label: "0 kg" }] : [], phase: buffer.phase });
-        }
-      }
-      return rows;
-    }
-
     function rowsForView(view) {
       if (view === "packing") return packingIds.map(id => buffers.find(b => b.id === id));
       if (view === "chrom") return chromIds.map(id => buffers.find(b => b.id === id));
@@ -1650,9 +1621,9 @@
       $("cvAEX").textContent = `${fmt(cvs.AEX)} L`;
 
       const notes = {
-        packing: mergePacking ? "显示装柱阶段6种缓冲液；AC/HIC/AEX及固定配制量按编号合并。" : "装柱缓冲液按AC、HIC、AEX及固定配制量展开。",
+        packing: "显示装柱阶段缓冲液；同一种缓冲液的AC/HIC/AEX及固定配制量按编号合并为一行。",
         chrom: "显示层析及下游相关缓冲液；非CV项采用默认固化数值。",
-        all: mergePacking ? "显示全部26种缓冲液；勾选时把装柱缓冲液用量合并计入总量。" : "显示全部26种缓冲液；未勾选时总量仅统计层析及下游阶段。"
+        all: mergePacking ? "显示全部缓冲液；勾选时把装柱缓冲液用量合并计入总量。" : "显示全部缓冲液；未勾选时总量仅统计层析及下游阶段。"
       };
       $("viewNote").textContent = notes[view];
 
@@ -1675,18 +1646,14 @@
       let total = 0;
       let tableRows = [];
 
-      if (view === "packing" && !mergePacking) {
-        tableRows = packingSplitRows(cvs);
-      } else {
-        tableRows = rowsForView(view).map(buffer => {
-          const calcView = view === "all" ? "chrom" : view;
-          const chrom = calcSteps(buffer, calcView, cvs);
-          const packing = view === "all" && mergePacking ? calcSteps(buffer, "packing", cvs) : { amount: 0, steps: [] };
-          const amount = chrom.amount + packing.amount;
-          const steps = [...chrom.steps, ...packing.steps];
-          return { buffer, amount, steps, phase: buffer.phase };
-        });
-      }
+      tableRows = rowsForView(view).map(buffer => {
+        const calcView = view === "all" ? "chrom" : view;
+        const chrom = calcSteps(buffer, calcView, cvs);
+        const packing = view === "all" && mergePacking ? calcSteps(buffer, "packing", cvs) : { amount: 0, steps: [] };
+        const amount = chrom.amount + packing.amount;
+        const steps = [...chrom.steps, ...packing.steps];
+        return { buffer, amount, steps, phase: buffer.phase };
+      });
 
       const rows = tableRows.map(row => {
         const { buffer } = row;
@@ -1782,16 +1749,11 @@
       // 2. 缓冲液列表主体表头
       lines.push(["代码", "缓冲液名称", "使用阶段", "管路冲洗用量 (kg)", "取样量 (kg)", "理论总用量 (kg)", "配制量 (kg)"]);
 
-      let exportRows = [];
-      if (view === "packing" && !mergePacking) {
-        exportRows = packingSplitRows(cvs);
-      } else {
-        exportRows = rowsForView(view).map(buffer => {
-          const chrom = calcSteps(buffer, view === "all" ? "chrom" : view, cvs);
-          const packing = view === "all" && mergePacking ? calcSteps(buffer, "packing", cvs) : { amount: 0, steps: [] };
-          return { buffer, amount: chrom.amount + packing.amount, steps: [...chrom.steps, ...packing.steps], phase: buffer.phase };
-        });
-      }
+      const exportRows = rowsForView(view).map(buffer => {
+        const chrom = calcSteps(buffer, view === "all" ? "chrom" : view, cvs);
+        const packing = view === "all" && mergePacking ? calcSteps(buffer, "packing", cvs) : { amount: 0, steps: [] };
+        return { buffer, amount: chrom.amount + packing.amount, steps: [...chrom.steps, ...packing.steps], phase: buffer.phase };
+      });
 
       for (const row of exportRows) {
         const key = getInputKey(row);
